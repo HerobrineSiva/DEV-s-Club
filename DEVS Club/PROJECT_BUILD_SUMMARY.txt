@@ -1,0 +1,141 @@
+MODEL ARENA — TRACK 1 PROJECT BUILD SUMMARY
+=============================================
+
+Project purpose
+---------------
+This project predicts whether a precision-manufacturing machine is likely to
+fail. It uses the machine's type and current operating telemetry to predict
+the target column "Machine failure":
+
+  0 = healthy machine
+  1 = machine failure
+
+The intended use is predictive maintenance: identify higher-risk machines so
+that maintenance teams can inspect them before an unexpected breakdown.
+
+Dataset used
+------------
+File: data/train.csv
+
+The training data contains 7,999 labelled observations with these six input
+features:
+
+  1. Type
+  2. Air temperature [K]
+  3. Process temperature [K]
+  4. Rotational speed [rpm]
+  5. Torque [Nm]
+  6. Tool wear [min]
+
+The target is Machine failure. The dataset has 271 failures (3.39%) and 7,728
+healthy observations (96.61%). There were no missing values and no duplicate
+rows in the supplied training data.
+
+Why class imbalance matters
+---------------------------
+Failure cases are rare. A model that predicts "healthy" for every row would
+appear 96.61% accurate but would catch zero failures. Therefore, the project
+does not select a model by accuracy. It uses Average Precision / PR-AUC as the
+primary ranking metric and reports precision, recall, F1-score, and a
+confusion matrix for the failure class.
+
+What was built
+--------------
+
+1. Data exploration
+   File: src/explore_data.py
+   Prints shape, columns, sample rows, types, missing values, duplicates,
+   target balance, and numeric summaries.
+
+2. Baseline models
+   File: src/train_baseline.py
+   Keeps the original Logistic Regression and Random Forest comparison script.
+
+3. Shared modelling utilities
+   File: src/modeling.py
+   Defines one source of truth for:
+     - feature names and target name;
+     - valid machine types (L, M, H);
+     - random seed (42);
+     - data loading and schema checks;
+     - input validation for inference;
+     - preprocessing pipelines;
+     - model configurations.
+
+4. Reproducible model-selection experiment
+   File: src/run_experiment.py
+   Uses a fixed stratified 80/20 split. The 80% development set has 6,399
+   rows; the 20% holdout has 1,600 rows and 54 failures. It compares four
+   models using five-fold stratified out-of-fold predictions:
+     - Logistic Regression
+     - Random Forest
+     - Extra Trees
+     - HistGradientBoosting
+
+   Preprocessing stays inside each sklearn pipeline, so scaling, imputing, and
+   one-hot encoding are fitted only on the training portion of each fold.
+
+5. Threshold selection
+   The selected model's out-of-fold development probabilities are tested at
+   thresholds from 0.05 through 0.95. The threshold with the best development
+   F1-score is retained. The holdout labels are not used to choose it.
+
+6. Final local evaluation
+   HistGradientBoosting was selected by development OOF Average Precision.
+   Its selected threshold was 0.26. The local holdout results were:
+
+     Average Precision / PR-AUC: 0.8086
+     F1-score:                   0.7193
+     Precision:                  0.6833
+     Recall:                     0.7593
+     Confusion matrix:           [[1527, 19], [13, 41]]
+
+7. Model artifact export
+   File: src/train_final.py
+   Fits the selected configuration on all labelled rows for deployment and
+   saves models/machine_failure_model.joblib. The artifact contains the fitted
+   sklearn pipeline, feature order, model name, threshold, positive class,
+   training seed, and training metadata.
+
+8. Inference program
+   File: src/predict.py
+   Loads the artifact and accepts a CSV containing the six feature columns.
+   It validates missing/extra columns, invalid machine types, non-numeric
+   values, infinite values, non-positive speed, and negative tool wear. It
+   returns a failure probability and thresholded failure class.
+
+9. Track 1 submission generator
+   File: src/make_submission.py
+   Accepts the organizers' hidden test.csv and creates submission.csv with:
+     - Machine failure probability
+     - Machine failure
+   The probability column is the important score for PR-AUC evaluation.
+
+10. Tests
+    Folder: tests/
+    Tests verify artifact loading, feature ordering, output size, probability
+    range, binary class output, missing-column rejection, and invalid-type
+    rejection.
+
+11. Documentation
+    README.md explains setup and commands.
+    METHODOLOGY.md is the Track 1 methodology write-up.
+    requirements.txt lists runtime and testing dependencies.
+
+Important generated folders
+---------------------------
+models/ contains generated trained model artifacts.
+results/ contains generated experiment results such as experiment.json.
+submission.csv is a generated hidden-test prediction file.
+
+These are ignored by Git so accidental large files and test submissions are
+not committed. They can be reproduced from the source code and training data.
+
+Known limits
+------------
+The dataset has no timestamps, machine IDs, plant IDs, or maintenance costs.
+Therefore random stratified validation cannot prove performance across time,
+unseen machines, plants, or changing operating conditions. The F1-optimal
+threshold of 0.26 is a good local default, but a real maintenance team should
+choose its threshold according to the cost of false alarms versus missed
+failures.

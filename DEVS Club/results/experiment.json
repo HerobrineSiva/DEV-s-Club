@@ -1,0 +1,66 @@
+{
+  "split": {
+    "seed": 42,
+    "holdout_fraction": 0.2,
+    "development_rows": 6399,
+    "holdout_rows": 1600,
+    "holdout_failures": 54
+  },
+  "failure_prevalence": 0.033879234904363044,
+  "development_oof": {
+    "Logistic Regression": {
+      "average_precision": 0.4138698840696329,
+      "threshold": 0.8800000000000002,
+      "threshold_metrics": {
+        "f1": 0.4349775784753363,
+        "precision": 0.42358078602620086,
+        "recall": 0.4470046082949309
+      }
+    },
+    "Random Forest": {
+      "average_precision": 0.7198838503176441,
+      "threshold": 0.35000000000000003,
+      "threshold_metrics": {
+        "f1": 0.6808510638297872,
+        "precision": 0.6324110671936759,
+        "recall": 0.7373271889400922
+      }
+    },
+    "Extra Trees": {
+      "average_precision": 0.6412535181617323,
+      "threshold": 0.5400000000000001,
+      "threshold_metrics": {
+        "f1": 0.5981735159817352,
+        "precision": 0.5927601809954751,
+        "recall": 0.6036866359447005
+      }
+    },
+    "HistGradientBoosting": {
+      "average_precision": 0.7852880633094482,
+      "threshold": 0.26000000000000006,
+      "threshold_metrics": {
+        "f1": 0.7377777777777778,
+        "precision": 0.7124463519313304,
+        "recall": 0.7649769585253456
+      }
+    }
+  },
+  "selected_model": "HistGradientBoosting",
+  "selected_threshold": 0.26000000000000006,
+  "holdout": {
+    "average_precision": 0.808551704078621,
+    "f1": 0.7192982456140351,
+    "precision": 0.6833333333333333,
+    "recall": 0.7592592592592593,
+    "confusion_matrix": [
+      [
+        1527,
+        19
+      ],
+      [
+        13,
+        41
+      ]
+    ]
+  }
+}
